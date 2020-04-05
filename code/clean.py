@@ -10,14 +10,14 @@ LOAD_FILE_NAME = '../data/training.1600000.processed.noemoticon.csv'
 STORE_FILE_NAME = '../data/tweets.csv'
 DATASET_COLUMNS = ["target", "id", "date", "flag", "user", "text"]
 DATASET_ENCODING = "ISO-8859-1"
-TEXT_CLEANING_RE = r'@\S+|https?:\S+|http?:\S|[^A-Za-z0-9]+'
+TEXT_CLEANING_RE = r'@\S+|https?:\S+|http?:\S|[^A-Za-z0-9]+|[0-9]+'
 TEST = True   # if TEST=True then fetch a smaller dataset
 
 
 def read_tweets():
     tweets = pd.read_csv(LOAD_FILE_NAME, encoding=DATASET_ENCODING, names=DATASET_COLUMNS)
     if TEST:
-        tweets = tweets.head(int(len(tweets) / 10000))
+        tweets = pd.concat([tweets.head(int(len(tweets) / 100)), tweets.tail(int(len(tweets) / 100))])
     print(tweets['text'])
     print("Read csv successfully, number of tweets: " + str(len(tweets)) + '\n')
     return tweets
