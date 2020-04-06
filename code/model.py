@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import gensim
+import pickle
 
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
@@ -12,10 +13,11 @@ from keras.layers import Activation, Dense, Dropout, Embedding, Flatten, Conv1D,
 from keras import utils
 from keras.callbacks import ReduceLROnPlateau, EarlyStopping
 
-LOAD_FILE_NAME = '../data/tweets.csv'
+LOAD_FILE_NAME = '../data/tweets_processed.csv'
 DATASET_COLUMNS = ["target", "id", "date", "flag", "user", "text"]
 DATASET_ENCODING = "ISO-8859-1"
 DATASET_SIZE = 32000
+TEST_PERCENTAGE = 0.2
 
 EPOCHS = 8
 BATCH_SIZE = 1024
@@ -26,7 +28,11 @@ W2V_WINDOW = 7
 W2V_EPOCH = 32
 W2V_MIN_COUNT = 10
 
-TEST_PERCENTAGE = 0.1
+# EXPORT
+KERAS_MODEL = "model.h5"
+WORD2VEC_MODEL = "model.w2v"
+TOKENIZER_MODEL = "tokenizer.pkl"
+ENCODER_MODEL = "encoder.pkl"
 
 TEST = True  # if TEST=True then fetch a smaller dataset
 
@@ -35,7 +41,7 @@ def read_tweets():
     if TEST:
         tweets = pd.read_csv(LOAD_FILE_NAME, encoding=DATASET_ENCODING, names=DATASET_COLUMNS, nrows=DATASET_SIZE + 1)
     else:
-        tweets = pd.read_csv(LOAD_FILE_NAME, encoding=DATASET_ENCODING, names=DATASET_COLUMNS)
+        tweets = pd.read_csv(LOAD_FILE_NAME, encoding=DATASET_ENCODING, names=DATASET_COLUMNS, nrows=800003)
     print(tweets['text'])
     print("Read csv successfully, number of tweets: " + str(len(tweets)) + '\n')
     return tweets
@@ -43,46 +49,44 @@ def read_tweets():
 
 def train():
     data = read_tweets()
-    documents = [str(_text).split() for _text in data.text]
-    documents = documents[1:]
-    l_index = int(len(documents) * (0.5 - TEST_PERCENTAGE / 2))
-    r_index = int(len(documents) * (0.5 + TEST_PERCENTAGE / 2))
-    data_train = documents[:l_index] + documents[r_index:]
-    data_test = documents[l_index:r_index]
+    data_train, data_test = train_test_split(data, test_size=TEST_PERCENTAGE, random_state=42)
+#    documents = documents[0:400000] + documents[-400000:0]
+    documents_train = [str(_text).split() for _text in data_train.text]
+    documents_test = [str(_text).split() for _text in data_test.text]
     print("TRAIN size:", len(data_train))
     print("TEST size:", len(data_test))
-    targets = data.target
-    targets = targets[0:]
-    targets = targets.tolist()
-    targets = targets[:l_index] + targets[r_index:]
-    targets_test = targets[l_index:r_index]
+    targets_train = data_train.target.tolist()
+    targets_test = data_test.target.tolist()
+    print("TRAIN size:", len(targets_train))
+    print("TEST size:", len(targets_test))
+
+    encoder = LabelEncoder()
+    encoder.fit(targets_train)
+    y_train = encoder.transform(targets_train)
+    y_test = encoder.transform(targets_test)
     w2v_model = gensim.models.word2vec.Word2Vec(size=W2V_SIZE,
                                                 window=W2V_WINDOW,
                                                 min_count=W2V_MIN_COUNT,
                                                 workers=8)
-    w2v_model.build_vocab(documents)
-    w2v_model.train(documents, total_examples=len(documents), epochs=W2V_EPOCH)
+    w2v_model.build_vocab(documents_train)
+    w2v_model.train(documents_train, total_examples=len(documents_train), epochs=W2V_EPOCH)
     print()
     print("model_test (most similar words of `sad`) :\n")
     print(w2v_model.most_similar("sad"))
     print()
 
     tokenizer = Tokenizer()
-    tokenizer.fit_on_texts(data_train)
+    tokenizer.fit_on_texts(documents_train)
 
-    x_train = pad_sequences(tokenizer.texts_to_sequences(data_train), maxlen=SEQUENCE_LENGTH)
-    x_test = pad_sequences(tokenizer.texts_to_sequences(data_test), maxlen=SEQUENCE_LENGTH)
+    x_train = pad_sequences(tokenizer.texts_to_sequences(documents_train), maxlen=SEQUENCE_LENGTH)
+    x_test = pad_sequences(tokenizer.texts_to_sequences(documents_test), maxlen=SEQUENCE_LENGTH)
     #    labels = targets.unique().tolist()
-    encoder = LabelEncoder()
-    encoder.fit(targets)
-    y_train = encoder.transform(targets)
-    y_test = encoder.transform(targets_test)
     y_train = y_train.reshape(-1, 1)
     y_test = y_test.reshape(-1, 1)
     print("x_train", x_train.shape)
     print("y_train", y_train.shape)
-    print("x_test", x_train.shape)
-    print("y_test", y_train.shape)
+    print("x_test", x_test.shape)
+    print("y_test", y_test.shape)
     print()
 
     vocab_size = len(tokenizer.word_index) + 1
@@ -104,7 +108,7 @@ def train():
     model.add(embedding_layer)
     model.add(Dropout(0.5))
     model.add(LSTM(100, dropout=0.2, recurrent_dropout=0.2))
-    model.add(Dense(1, activation='relu'))
+    model.add(Dense(1, activation='sigmoid'))
     model.summary()
 
     model.compile(loss='binary_crossentropy',
@@ -121,8 +125,36 @@ def train():
 
     score = model.evaluate(x_test, y_test, batch_size=BATCH_SIZE)
     print()
-    print("ACCURACY:", score[1])
+    print("ACCURACY: ", score[1])
     print("LOSS:", score[0])
+
+    model.save(KERAS_MODEL)
+    w2v_model.save(WORD2VEC_MODEL)
+    pickle.dump(tokenizer, open(TOKENIZER_MODEL, "wb"), protocol=0)
+    pickle.dump(encoder, open(ENCODER_MODEL, "wb"), protocol=0)
+
+
+def decode_sentiment(score, include_neutral=True, threshold=0.4):
+    if include_neutral:
+        label = 'Neutral'
+        if score <= threshold:
+            label = 'Negative'
+        elif score >= 1-threshold:
+            label = 'Positive'
+        return label
+    else:
+        return 'Negative' if score < 0.5 else 'Positive'
+
+
+def predict(tokenizer, model, text, include_neutral=True):
+    # Tokenize text
+    x_test = pad_sequences(tokenizer.texts_to_sequences([text]), maxlen=SEQUENCE_LENGTH)
+    # Predict
+    score = model.predict([x_test])[0]
+    # Decode sentiment
+    label = decode_sentiment(score, include_neutral=include_neutral)
+
+    return {"label": label, "score": float(score)}
 
 
 if __name__ == '__main__':
