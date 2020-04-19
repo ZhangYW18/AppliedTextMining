@@ -10,7 +10,6 @@ from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras.models import Sequential
 from keras.layers import Activation, Dense, Dropout, Embedding, Flatten, Conv1D, MaxPooling1D, LSTM
-from keras import utils
 from keras.callbacks import ReduceLROnPlateau, EarlyStopping
 
 LOAD_FILE_NAME = '../data/tweets_processed.csv'
@@ -34,27 +33,29 @@ WORD2VEC_MODEL = "model.w2v"
 TOKENIZER_MODEL = "tokenizer.pkl"
 ENCODER_MODEL = "encoder.pkl"
 
-TEST = True  # if TEST=True then fetch a smaller dataset
+TEST = False  # if TEST=True then fetch a smaller dataset
 
 
 def read_tweets():
     if TEST:
         tweets = pd.read_csv(LOAD_FILE_NAME, encoding=DATASET_ENCODING, names=DATASET_COLUMNS, nrows=DATASET_SIZE + 1)
     else:
-        tweets = pd.read_csv(LOAD_FILE_NAME, encoding=DATASET_ENCODING, names=DATASET_COLUMNS, nrows=800003)
-    print(tweets['text'])
+        tweets = pd.read_csv(LOAD_FILE_NAME, encoding=DATASET_ENCODING, names=DATASET_COLUMNS)
+    print(tweets.head())
     print("Read csv successfully, number of tweets: " + str(len(tweets)) + '\n')
     return tweets
 
 
 def train():
     data = read_tweets()
+    data = data[0:]
     data_train, data_test = train_test_split(data, test_size=TEST_PERCENTAGE, random_state=42)
 #    documents = documents[0:400000] + documents[-400000:0]
     documents_train = [str(_text).split() for _text in data_train.text]
     documents_test = [str(_text).split() for _text in data_test.text]
     print("TRAIN size:", len(data_train))
     print("TEST size:", len(data_test))
+    print(data_train)
     targets_train = data_train.target.tolist()
     targets_test = data_test.target.tolist()
     print("TRAIN size:", len(targets_train))
@@ -94,7 +95,6 @@ def train():
     print("Vocab size", vocab_size)
     print()
     embedding_matrix = np.zeros((vocab_size, W2V_SIZE))
-    cnt = int(0)
     for word, i in tokenizer.word_index.items():
         if word in w2v_model.wv:
             embedding_matrix[i] = w2v_model.wv[word]
