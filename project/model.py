@@ -12,9 +12,12 @@ from keras.models import Sequential
 from keras.layers import Activation, Dense, Dropout, Embedding, Flatten, Conv1D, MaxPooling1D, LSTM
 from keras.callbacks import ReduceLROnPlateau, EarlyStopping
 
-LOAD_FILE_NAME = '../data/tweets_processed.csv'
-DATASET_COLUMNS = ["target", "id", "date", "flag", "user", "text"]
-DATASET_ENCODING = "ISO-8859-1"
+from clean import DATASET_COLUMNS, DATASET_ENCODING
+from clean import STORE_FILE_NAME as LOAD_FILE_NAME
+
+# LOAD_FILE_NAME = '../data/tweets_processed.csv'
+# DATASET_COLUMNS = ["target", "id", "date", "flag", "user", "text"]
+# DATASET_ENCODING = "ISO-8859-1"
 DATASET_SIZE = 32000
 TEST_PERCENTAGE = 0.2
 
@@ -28,10 +31,10 @@ W2V_EPOCH = 32
 W2V_MIN_COUNT = 10
 
 # EXPORT
-KERAS_MODEL = "model.h5"
-WORD2VEC_MODEL = "model.w2v"
-TOKENIZER_MODEL = "tokenizer.pkl"
-ENCODER_MODEL = "encoder.pkl"
+KERAS_MODEL = "models/model.h5"
+WORD2VEC_MODEL = "models/model.w2v"
+TOKENIZER_MODEL = "models/tokenizer.pkl"
+ENCODER_MODEL = "models/encoder.pkl"
 
 TEST = False  # if TEST=True then fetch a smaller dataset
 
@@ -132,29 +135,6 @@ def train():
     w2v_model.save(WORD2VEC_MODEL)
     pickle.dump(tokenizer, open(TOKENIZER_MODEL, "wb"), protocol=0)
     pickle.dump(encoder, open(ENCODER_MODEL, "wb"), protocol=0)
-
-
-def decode_sentiment(score, include_neutral=True, threshold=0.4):
-    if include_neutral:
-        label = 'Neutral'
-        if score <= threshold:
-            label = 'Negative'
-        elif score >= 1-threshold:
-            label = 'Positive'
-        return label
-    else:
-        return 'Negative' if score < 0.5 else 'Positive'
-
-
-def predict(tokenizer, model, text, include_neutral=True):
-    # Tokenize text
-    x_test = pad_sequences(tokenizer.texts_to_sequences([text]), maxlen=SEQUENCE_LENGTH)
-    # Predict
-    score = model.predict([x_test])[0]
-    # Decode sentiment
-    label = decode_sentiment(score, include_neutral=include_neutral)
-
-    return {"label": label, "score": float(score)}
 
 
 if __name__ == '__main__':

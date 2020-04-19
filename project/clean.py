@@ -6,8 +6,8 @@ import re
 from nltk import SnowballStemmer
 from nltk.corpus import stopwords
 
-LOAD_FILE_NAME = '../data/training.1600000.processed.noemoticon.csv'
-STORE_FILE_NAME = '../data/tweets_processed_16000.csv'
+LOAD_FILE_NAME = '../data/training.csv'
+STORE_FILE_NAME = '../data/tweets_processed.csv'
 DATASET_COLUMNS = ["target", "id", "date", "flag", "user", "text"]
 DATASET_ENCODING = "ISO-8859-1"
 TEXT_CLEANING_RE = r'@\S+|https?:\S+|http?:\S|[^A-Za-z0-9]+|[0-9]+'

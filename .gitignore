@@ -1,4 +1,6 @@
 twitter-sentiment-analysis/
 venv/
+!data/tweets_processed_32000.csv
+!data/training.csv
 data/
 project/models

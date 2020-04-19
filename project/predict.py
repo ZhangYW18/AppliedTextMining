@@ -7,9 +7,12 @@ from keras.preprocessing.sequence import pad_sequences
 from clean import preprocess
 
 
-POSITIVE = 0
-NEGATIVE = 1
-NEUTRAL = 2
+# POSITIVE = 0
+# NEGATIVE = 1
+# NEUTRAL = 2
+POSITIVE = 'Positive'
+NEGATIVE = 'Negative'
+NEUTRAL = 'Neutral'
 
 SEQUENCE_LENGTH = 300
 
@@ -37,6 +40,7 @@ def predict_and_train(input, include_neutral=True):
     score = model.predict([x_test])[0]
     print("score: ", score)
     label = decode_sentiment(score, include_neutral=include_neutral)
+    print("label: ", label)
     # train
     return {"label": label, "score": float(score),
             "elapsed_time": time.time() - start_at}
