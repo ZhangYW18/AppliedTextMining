@@ -27,8 +27,25 @@ python model.py
 
 ## 3. Predict the Testcases
 Modify the testcases in file project/predict.py as you like. Run project/predict.py. You will see the predicted sentiment of your texts.
+
+```python
+if __name__ == '__main__':
+    predict_and_train("I feel happy")
+    predict_and_train("I feel sad")
+    predict_and_train("i don't know what i'm doing")
+```
+
 ```shell script
 python predict.py
+```
+
+```
+score:  [0.709203]
+label:  Positive
+score:  [0.00252197]
+label:  Negative
+score:  [0.37370038]
+label:  Negative
 ```
 
 ## Local Python and Packages Version
