@@ -29,7 +29,7 @@ def decode_sentiment(score, include_neutral=True, threshold=0.6):
         return NEGATIVE if score < 0.5 else POSITIVE
 
 
-def predict_and_train(input, include_neutral=True):
+def predict(input, include_neutral=True):
     # predict
     input_processed = preprocess(input)
     text = str(input_processed).split()
@@ -47,6 +47,6 @@ def predict_and_train(input, include_neutral=True):
 
 
 if __name__ == '__main__':
-    predict_and_train("I feel happy")
-    predict_and_train("I feel sad")
-    predict_and_train("i don't know what i'm doing")
+    predict("I feel happy")
+    predict("I feel sad")
+    predict("i don't know what i'm doing")

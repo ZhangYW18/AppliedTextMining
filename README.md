@@ -30,9 +30,9 @@ Modify the testcases in file project/predict.py as you like. Run project/predict
 
 ```python
 if __name__ == '__main__':
-    predict_and_train("I feel happy")
-    predict_and_train("I feel sad")
-    predict_and_train("i don't know what i'm doing")
+    predict("I feel happy")
+    predict("I feel sad")
+    predict("i don't know what i'm doing")
 ```
 
 ```shell script
