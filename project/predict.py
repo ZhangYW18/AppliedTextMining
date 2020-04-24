@@ -20,9 +20,9 @@ SEQUENCE_LENGTH = 300
 def decode_sentiment(score, include_neutral=True, threshold=0.6):
     if include_neutral:
         label = NEUTRAL
-        if score <= threshold:
+        if score <= 1-threshold:
             label = NEGATIVE
-        elif score >= 1-threshold:
+        elif score >= threshold:
             label = POSITIVE
         return label
     else:
