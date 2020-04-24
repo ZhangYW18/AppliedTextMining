@@ -47,8 +47,13 @@ label:  Negative
 score:  [0.37370038]
 label:  Negative
 ```
+## Related Repository
+[SpotLight - A sentiment analysis web system using Django](https://github.com/ZhangYW18/spotlight)
 
 ## Local Python and Packages Version
+
+Note that the versions of package "tensorflow" and "keras" and the version of Python should fit according to https://docs.floydhub.com/guides/environments/.
+
 ```shell script
 victor@ColedeMBP:~/PycharmProjects/AppliedTextMining(master⚡) » python --version
 Python 3.6.0
