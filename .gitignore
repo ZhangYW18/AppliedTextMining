@@ -4,3 +4,4 @@ venv/
 !data/training.csv
 data/
 project/models
+project/*pycache*/*
